@@ -5,14 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Pacer - Script to Time Calculator</title>
   
+  <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "vzpqfwcc52");
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg: #0d0d0d;         /* 深い黒 */
-      --surface: #1a1a1a;    /* 少し浮き出た黒 */
-      --neon: #00ff66;       /* ネオングリーン */
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --neon: #00ff66;
       --neon-dim: rgba(0, 255, 102, 0.15);
       --text-main: #ffffff;
       --text-sub: #888888;
@@ -38,7 +46,6 @@
       max-width: 600px;
     }
 
-    /* ── Header ── */
     header {
       text-align: center;
       margin-bottom: 30px;
@@ -55,7 +62,6 @@
       margin-top: 5px;
     }
 
-    /* ── Time Display (巨大な数字) ── */
     .time-display {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -66,7 +72,7 @@
       box-shadow: 0 0 40px var(--neon-dim);
     }
     .time-value {
-      font-family: 'JetBrains Mono', monospace; /* デジタル時計っぽいフォント */
+      font-family: 'JetBrains Mono', monospace;
       font-size: 64px;
       font-weight: 700;
       color: var(--neon);
@@ -81,7 +87,6 @@
       margin-top: 10px;
     }
 
-    /* ── Speed Controls ── */
     .speed-controls {
       display: flex;
       gap: 10px;
@@ -105,7 +110,6 @@
       color: var(--neon);
     }
 
-    /* ── Text Input ── */
     textarea {
       width: 100%;
       height: 250px;
@@ -173,7 +177,6 @@
 
     let currentSpeed = 1.0;
 
-    // スピードボタンの切り替え
     speedBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         speedBtns.forEach(b => b.classList.remove('active'));
@@ -183,7 +186,6 @@
       });
     });
 
-    // メインの計算ロジック（ここが魔法の部分）
     function calculateTime() {
       const text = input.value.trim();
       
@@ -194,39 +196,29 @@
         return;
       }
 
-      // 日本語が含まれているか判定（ひらがな・カタカナ・漢字）
       const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
       
       let seconds = 0;
 
       if (isJapanese) {
-        // 日本語の場合：文字数で計算（改行や空白を除外）
         const charCount = text.replace(/\s+/g, '').length;
-        // 日本語の平均話速: 1分間に約300文字 (1秒間に5文字)
         seconds = charCount / 5; 
-        
         detectedLangDisplay.textContent = "🇯🇵 Japanese Detected";
         countDisplay.textContent = `${charCount} characters`;
       } else {
-        // 英語（その他）の場合：単語数で計算
         const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-        // 英語の平均話速: 1分間に約150単語 (1秒間に2.5単語)
         seconds = wordCount / 2.5;
-        
         detectedLangDisplay.textContent = "🇺🇸 English Detected";
         countDisplay.textContent = `${wordCount} words`;
       }
 
-      // スピード倍率を適用 (Fastなら時間が短くなるように割る)
       seconds = seconds / currentSpeed;
 
-      // MM:SS 形式にフォーマット
       const m = Math.floor(seconds / 60);
       const s = Math.floor(seconds % 60);
       displayTime.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 
-    // 入力するたびにリアルタイム計算
     input.addEventListener('input', calculateTime);
   </script>
 </body>
