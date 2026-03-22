@@ -160,10 +160,12 @@
       <button class="speed-btn" data-speed="1.25">Fast</button>
     </div>
 
-    <textarea id="scriptInput" placeholder="Paste your video script here..."></textarea>
+    <textarea id="scriptInput" placeholder="[BGM] Narrator: Hello! (pause) 
+Paste your script here. Instructions in brackets or parentheses are automatically ignored!"></textarea>
     
     <div class="stats">
       <span id="detectedLang">Auto-detecting language...</span>
+      <span style="color: var(--text-sub); opacity: 0.7;">Smart Script Mode: ON</span>
       <span id="countDisplay">0 words</span>
     </div>
   </div>
@@ -187,26 +189,34 @@
     });
 
     function calculateTime() {
-      const text = input.value.trim();
+      const text = input.value;
+      const trimmedText = text.trim();
       
-      if (!text) {
+      if (!trimmedText) {
         displayTime.textContent = "00:00";
         detectedLangDisplay.textContent = "Waiting for script...";
         countDisplay.textContent = "0 words";
         return;
       }
 
-      const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+      // 台本内の「読まない部分」を除外する処理を追加
+      const cleanText = trimmedText
+        .replace(/\[.*?\]/g, '')      // [ ] の中身を削除
+        .replace(/\(.*?\)/g, '')      // ( ) の中身を削除
+        .replace(/^.*?[：:]/gm, '')    // 行頭の「名前：」などを削除
+        .trim();
+
+      const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(cleanText);
       
       let seconds = 0;
 
       if (isJapanese) {
-        const charCount = text.replace(/\s+/g, '').length;
+        const charCount = cleanText.replace(/\s+/g, '').length;
         seconds = charCount / 5; 
         detectedLangDisplay.textContent = "🇯🇵 Japanese Detected";
         countDisplay.textContent = `${charCount} characters`;
       } else {
-        const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+        const wordCount = cleanText.split(/\s+/).filter(word => word.length > 0).length;
         seconds = wordCount / 2.5;
         detectedLangDisplay.textContent = "🇺🇸 English Detected";
         countDisplay.textContent = `${wordCount} words`;
