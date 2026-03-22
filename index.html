@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pacer - Script to Time Calculator</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0d0d0d;         /* 深い黒 */
+      --surface: #1a1a1a;    /* 少し浮き出た黒 */
+      --neon: #00ff66;       /* ネオングリーン */
+      --neon-dim: rgba(0, 255, 102, 0.15);
+      --text-main: #ffffff;
+      --text-sub: #888888;
+      --border: #333333;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: -0.05em;
+    }
+    h1 span { color: var(--neon); }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 5px;
+    }
+
+    /* ── Time Display (巨大な数字) ── */
+    .time-display {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 40px var(--neon-dim);
+    }
+    .time-value {
+      font-family: 'JetBrains Mono', monospace; /* デジタル時計っぽいフォント */
+      font-size: 64px;
+      font-weight: 700;
+      color: var(--neon);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+    .time-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 10px;
+    }
+
+    /* ── Speed Controls ── */
+    .speed-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .speed-btn {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      padding: 12px 0;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .speed-btn.active {
+      background: var(--neon-dim);
+      border-color: var(--neon);
+      color: var(--neon);
+    }
+
+    /* ── Text Input ── */
+    textarea {
+      width: 100%;
+      height: 250px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: none;
+      transition: border-color 0.2s;
+    }
+    textarea:focus {
+      border-color: var(--neon);
+    }
+    textarea::placeholder {
+      color: #555;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 10px;
+      padding: 0 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Pacer<span>.</span></h1>
+      <div class="subtitle">Script to Time Calculator</div>
+    </header>
+
+    <div class="time-display">
+      <div class="time-value" id="displayTime">00:00</div>
+      <div class="time-label">Estimated Time</div>
+    </div>
+
+    <div class="speed-controls">
+      <button class="speed-btn" data-speed="0.85">Slow</button>
+      <button class="speed-btn active" data-speed="1.0">Normal</button>
+      <button class="speed-btn" data-speed="1.25">Fast</button>
+    </div>
+
+    <textarea id="scriptInput" placeholder="Paste your video script here..."></textarea>
+    
+    <div class="stats">
+      <span id="detectedLang">Auto-detecting language...</span>
+      <span id="countDisplay">0 words</span>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('scriptInput');
+    const displayTime = document.getElementById('displayTime');
+    const detectedLangDisplay = document.getElementById('detectedLang');
+    const countDisplay = document.getElementById('countDisplay');
+    const speedBtns = document.querySelectorAll('.speed-btn');
+
+    let currentSpeed = 1.0;
+
+    // スピードボタンの切り替え
+    speedBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        speedBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSpeed = parseFloat(btn.getAttribute('data-speed'));
+        calculateTime();
+      });
+    });
+
+    // メインの計算ロジック（ここが魔法の部分）
+    function calculateTime() {
+      const text = input.value.trim();
+      
+      if (!text) {
+        displayTime.textContent = "00:00";
+        detectedLangDisplay.textContent = "Waiting for script...";
+        countDisplay.textContent = "0 words";
+        return;
+      }
+
+      // 日本語が含まれているか判定（ひらがな・カタカナ・漢字）
+      const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+      
+      let seconds = 0;
+
+      if (isJapanese) {
+        // 日本語の場合：文字数で計算（改行や空白を除外）
+        const charCount = text.replace(/\s+/g, '').length;
+        // 日本語の平均話速: 1分間に約300文字 (1秒間に5文字)
+        seconds = charCount / 5; 
+        
+        detectedLangDisplay.textContent = "🇯🇵 Japanese Detected";
+        countDisplay.textContent = `${charCount} characters`;
+      } else {
+        // 英語（その他）の場合：単語数で計算
+        const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+        // 英語の平均話速: 1分間に約150単語 (1秒間に2.5単語)
+        seconds = wordCount / 2.5;
+        
+        detectedLangDisplay.textContent = "🇺🇸 English Detected";
+        countDisplay.textContent = `${wordCount} words`;
+      }
+
+      // スピード倍率を適用 (Fastなら時間が短くなるように割る)
+      seconds = seconds / currentSpeed;
+
+      // MM:SS 形式にフォーマット
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      displayTime.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // 入力するたびにリアルタイム計算
+    input.addEventListener('input', calculateTime);
+  </script>
+</body>
+</html>
